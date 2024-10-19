@@ -18,23 +18,20 @@ const validateUserData = (req, res, next) => {
 // GET USERS
 router.get('/', async (req, res) => {
     const db = getDatabase();
-    const { page = 1, limit = 5, query = '', sortBy = '_id', sortMode = 'desc' } = req.query;
+    const { page = 1, limit = 5, search = '', sortBy = '_id', sortMode = 'desc' } = req.query;
 
     try {
         let users;
         const offset = (page - 1) * limit;
         const sort = { [sortBy]: sortMode === 'desc' ? -1 : 1 };
         const searchQuery = {
-            $or: [{ name: new RegExp(query, "i") }, { phone: new RegExp(query, "i") }],
+            $or: [{ name: new RegExp(search, "i") }, { phone: new RegExp(search, "i") }],
         };
-        console.log(limit, offset, searchQuery);
-
         if (parseInt(limit) === 0) {
             users = await User.getAll(db, searchQuery, sort);
         } else {
             users = await User.getAll(db, searchQuery, sort, offset, parseInt(limit));
         }
-        console.log(users);
         const total = await User.getCount(db, searchQuery);
         const pages = parseInt(limit) === 0 ? 1 : Math.ceil(total / limit);
 
@@ -75,8 +72,9 @@ router.post('/', validateUserData, async (req, res) => {
     try {
         const newUser = new User(name, phone);
         const result = await User.save(db, newUser);
-        res.status(201).json(result.ops[0]);
+        res.status(201).json({ _id: result.insertedId, name, phone });
     } catch (err) {
+        console.error('Error creating user', err);
         res.status(500).json({ error: err.message });
     }
 });

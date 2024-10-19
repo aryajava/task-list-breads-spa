@@ -5,12 +5,12 @@ dotenv.config();
 let dbConnection;
 
 export const connectToDb = async () => {
+  if (dbConnection) {
+    return dbConnection;
+  }
   if (!process.env.MONGODB_URI || !process.env.DB_NAME) {
     console.error("Missing environment variables for MongoDB connection.");
     process.exit(1);
-  }
-  if (dbConnection) {
-    return dbConnection;
   }
   const client = new MongoClient(process.env.MONGODB_URI);
   try {

@@ -3,6 +3,9 @@
     <div class="col">
       <div class="card">
         <div class="card-header">
+          <h3 class="card-title my-1 text-center">MongoDB Breads (Browse, Read, Edit, Add, Delete, Sort)</h3>
+        </div>
+        <div class="card-body">
           <div class="row">
             <div class="col-md-3 mb-3">
               <div class="input-group">
@@ -24,24 +27,22 @@
             </div>
           </div>
         </div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th scope="col" class="col-1 align-middle px-2">No.</th>
-                  <th scope="col" class="col-4 col-md-3 align-middle px-2" id="sortName">Name <i
-                      class="fa-solid fa-sort"></i></th>
-                  <th scope="col" class="col-4 col-md-3 align-middle px-2" id="sortPhone">Phone <i
-                      class="fa-solid fa-sort"></i></th>
-                  <th scope="col" class="col-3 align-middle px-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="userTableBody">
-                <!-- User rows will be inserted here -->
-              </tbody>
-            </table>
-          </div>
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th scope="col" class="col-1 align-middle px-2">No.</th>
+                <th scope="col" class="col-4 col-md-3 align-middle px-2" id="sortName"><i
+                    class="fa-solid fa-sort me-2"></i>Name</th>
+                <th scope="col" class="col-4 col-md-3 align-middle px-2" id="sortPhone"><i
+                    class="fa-solid fa-sort me-2"></i>Phone</th>
+                <th scope="col" class="col-3 align-middle px-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody">
+              <!-- User rows will be inserted here -->
+            </tbody>
+          </table>
         </div>
         <div class="card-footer d-flex flex-column flex-md-row justify-content-between align-items-center">
           <button type="button" class="btn btn-primary mb-2 mb-md-0" id="addUserBtn">
@@ -110,6 +111,7 @@
       let sortBy = '_id';
       let sortMode = 'desc';
       let userId = '';
+      let formMode = 'add';
 
       const userTableBody = document.getElementById('userTableBody');
       const pagination = document.getElementById('pagination');
@@ -125,20 +127,21 @@
 
       window.showModal = (mode, id = '', name = '', phone = '') => {
         userId = id;
-        if (mode === 'add') {
+        formMode = mode;
+        if (formMode === 'add') {
           userModalLabel.textContent = 'Add User';
           formModalContent.style.display = 'block';
           nameFormModal.value = '';
           phoneFormModal.value = '';
           deleteContent.style.display = 'none';
           saveButton.textContent = 'Save';
-        } else if (mode === 'edit') {
+        } else if (formMode === 'edit') {
           userModalLabel.textContent = 'Edit User';
           deleteContent.style.display = 'none';
           nameFormModal.value = name;
           phoneFormModal.value = phone;
-          saveButton.textContent = 'Save';
-        } else if (mode === 'delete') {
+          saveButton.textContent = 'Save changes';
+        } else if (formMode === 'delete') {
           userModalLabel.textContent = 'Delete User';
           deleteContent.style.display = 'block';
           formModalContent.style.display = 'none';
@@ -149,14 +152,18 @@
       };
 
       const fetchUsers = async () => {
-        let fetchUrl = `/users?page=${currentPage}&limit=${limit}&query=${search}&sortBy=${sortBy}&sortMode=${sortMode}`;
+        let fetchUrl = `/users?page=${currentPage}&limit=${limit}&search=${search}&sortBy=${sortBy}&sortMode=${sortMode}`;
         console.log(fetchUrl);
         const response = await fetch(fetchUrl);
         const data = await response.json();
         console.log(data);
 
-        users = data.data;
-        renderUsers(data.total);
+        if (data.data && Array.isArray(data.data)) {
+          users = data.data;
+          renderUsers(data.total);
+        } else {
+          console.error('Unexpected data format:', data);
+        }
       };
 
       const renderUsers = (total) => {
@@ -200,12 +207,46 @@
       };
 
       const renderPagination = (total) => {
-        pagination.innerHTML = '';
         const pages = Math.ceil(total / limit);
+        const pagination = document.getElementById('pagination');
+        pagination.innerHTML = '';  // Reset pagination items
         paginationInfo.textContent = `Showing ${Math.min((currentPage - 1) * limit + 1, total)} to ${Math.min(currentPage * limit, total)} of ${total} entries`;
 
         if (pages > 1) {
-          for (let i = 1; i <= pages; i++) {
+          // Previous Button
+          const prevItem = document.createElement('li');
+          prevItem.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+          prevItem.innerHTML = `<a class="page-link" href="#" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a>`;
+          prevItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentPage > 1) {
+              currentPage--;
+              fetchUsers();
+            }
+          });
+          pagination.appendChild(prevItem);
+
+          // First Page
+          const firstPage = document.createElement('li');
+          firstPage.className = `page-item ${currentPage === 1 ? 'active' : ''}`;
+          firstPage.innerHTML = `<a class="page-link" href="#">1</a>`;
+          firstPage.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentPage = 1;
+            fetchUsers();
+          });
+          pagination.appendChild(firstPage);
+
+          // Ellipsis before
+          if (currentPage > 3) {
+            const ellipsisBefore = document.createElement('li');
+            ellipsisBefore.className = 'page-item disabled';
+            ellipsisBefore.innerHTML = `<span class="page-link">...</span>`;
+            pagination.appendChild(ellipsisBefore);
+          }
+
+          // Pages around current page (max 3 pages)
+          for (let i = Math.max(2, currentPage - 1); i <= Math.min(pages - 1, currentPage + 1); i++) {
             const pageItem = document.createElement('li');
             pageItem.className = `page-item ${i === currentPage ? 'active' : ''}`;
             pageItem.innerHTML = `<a class="page-link" href="#">${i}</a>`;
@@ -216,6 +257,38 @@
             });
             pagination.appendChild(pageItem);
           }
+
+          // Ellipsis after
+          if (currentPage < pages - 2) {
+            const ellipsisAfter = document.createElement('li');
+            ellipsisAfter.className = 'page-item disabled';
+            ellipsisAfter.innerHTML = `<span class="page-link">...</span>`;
+            pagination.appendChild(ellipsisAfter);
+          }
+
+          // Last Page
+          const lastPage = document.createElement('li');
+          lastPage.className = `page-item ${currentPage === pages ? 'active' : ''}`;
+          lastPage.innerHTML = `<a class="page-link" href="#">${pages}</a>`;
+          lastPage.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentPage = pages;
+            fetchUsers();
+          });
+          pagination.appendChild(lastPage);
+
+          // Next Button
+          const nextItem = document.createElement('li');
+          nextItem.className = `page-item ${currentPage === pages ? 'disabled' : ''}`;
+          nextItem.innerHTML = `<a class="page-link" href="#" aria-label="Next"><span aria-hidden="true">&raquo;</span></a>`;
+          nextItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentPage < pages) {
+              currentPage++;
+              fetchUsers();
+            }
+          });
+          pagination.appendChild(nextItem);
         }
       };
 
@@ -223,15 +296,27 @@
         e.preventDefault();
         const formData = new FormData(userForm);
         const userData = Object.fromEntries(formData.entries());
+        userFormUrl = '/users';
+        method = 'POST';
+        headers = { 'Content-Type': 'application/json' };
+        if (formMode === 'edit') {
+          userFormUrl = `/users/${userId}`;
+          method = 'PUT';
+        }
+        if (formMode === 'delete') {
+          userFormUrl = `/users/${userId}`;
+          method = 'DELETE';
+          headers = {};
+        }
+        const response = await fetch(userFormUrl, {
+          method,
+          headers,
+          body: method !== 'DELETE' ? JSON.stringify(userData) : null
+        });
+        const data = await response.json();
 
-        if (saveButton.textContent === 'Save') {
-          await fetch(`/users${userModalLabel.textContent === 'Add User' ? '' : `/${userId}`}`, {
-            method: userModalLabel.textContent === 'Add User' ? 'POST' : 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(userData)
-          });
-        } else {
-          await fetch(`/users/${userId}`, { method: 'DELETE' });
+        if (!response.ok) {
+          throw new Error(data.error || 'Something went wrong');
         }
 
         userModal.hide();
@@ -247,8 +332,12 @@
         currentPage = 1;
         limit = 5;
         search = '';
-        sortBy = '_id';
-        sortMode = 'desc';
+        if (sortBy !== '_id') {
+          sortBy = '_id';
+          sortMode = 'desc';
+          document.getElementById('sortName').innerHTML = `<i class="fa-solid fa-sort me-2"></i>Name`;
+          document.getElementById('sortPhone').innerHTML = `<i class="fa-solid fa-sort me-2"></i>Phone`;
+        }
         document.getElementById('search').value = '';
         limitSelect.value = '5';
         fetchUsers();
@@ -260,11 +349,21 @@
       document.getElementById('sortName').addEventListener('click', () => {
         sortBy = 'name';
         sortMode = sortMode === 'asc' ? 'desc' : 'asc';
+        if (sortMode === 'asc') {
+          document.getElementById('sortName').innerHTML = `<i class="fa-solid fa-sort-asc me-2"></i>Name`;
+        } else {
+          document.getElementById('sortName').innerHTML = `<i class="fa-solid fa-sort-desc me-2"></i>Name`;
+        }
         fetchUsers();
       });
       document.getElementById('sortPhone').addEventListener('click', () => {
         sortBy = 'phone';
         sortMode = sortMode === 'asc' ? 'desc' : 'asc';
+        if (sortMode === 'asc') {
+          document.getElementById('sortPhone').innerHTML = `<i class="fa-solid fa-sort-asc me-2"></i>Phone`;
+        } else {
+          document.getElementById('sortPhone').innerHTML = `<i class="fa-solid fa-sort-desc me-2"></i>Phone`;
+        }
         fetchUsers();
       });
 
