@@ -19,13 +19,24 @@ const validateUserData = (req, res, next) => {
 router.get('/', async (req, res) => {
     const db = getDatabase();
     const { page = 1, limit = 5, query = '', sortBy = '_id', sortMode = 'desc' } = req.query;
-    const offset = (page - 1) * limit;
-    const sort = { [sortBy]: sortMode === 'desc' ? -1 : 1 };
 
     try {
-        const users = await User.getAll(db, { name: new RegExp(query, 'i') }, sort, offset, parseInt(limit));
-        const total = await User.getCount(db, { name: new RegExp(query, 'i') });
-        const pages = Math.ceil(total / limit);
+        let users;
+        const offset = (page - 1) * limit;
+        const sort = { [sortBy]: sortMode === 'desc' ? -1 : 1 };
+        const searchQuery = {
+            $or: [{ name: new RegExp(query, "i") }, { phone: new RegExp(query, "i") }],
+        };
+        console.log(limit, offset, searchQuery);
+
+        if (parseInt(limit) === 0) {
+            users = await User.getAll(db, searchQuery, sort);
+        } else {
+            users = await User.getAll(db, searchQuery, sort, offset, parseInt(limit));
+        }
+        console.log(users);
+        const total = await User.getCount(db, searchQuery);
+        const pages = parseInt(limit) === 0 ? 1 : Math.ceil(total / limit);
 
         res.status(200).json({
             data: users,
