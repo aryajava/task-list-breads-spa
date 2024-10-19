@@ -3,15 +3,15 @@ import express from "express";
 import path from "path";
 import cookieParser from "cookie-parser";
 import logger from "morgan";
-import db from "./db.js";
+const __dirname = import.meta.dirname;
+import { connectToDb } from "./config/database.js";
 
 import usersRouter from "./routes/users.js";
 import todosRouter from "./routes/todos.js";
 
 const app = express();
 
-app.use("/users", usersRouter);
-app.use("/todos", todosRouter);
+connectToDb();
 
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
@@ -23,7 +23,11 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/vendor", express.static(path.join(__dirname, "public/vendor")));
 
-db.connectToDb();
+app.get("/", (req, res) => {
+    res.render("listUsers");
+});
+
+app.use("/users", usersRouter);
 
 app.use((req, res, next) => {
     next(createError(404));

@@ -3,11 +3,11 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export default class Todo {
-    constructor(title, complete, deadline, executor) {
+    constructor(title, complete = false, deadline = new Date(), executor) {
         this.title = title;
-        this.complete = complete || false;
-        this.deadline = deadline || new Date();
-        this.executor = ObjectId(executor);
+        this.complete = complete;
+        this.deadline = deadline;
+        this.executor = new ObjectId(executor);
     }
 
     static validate(todoData) {
