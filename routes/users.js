@@ -1,19 +1,9 @@
 import express from 'express';
 import { getDatabase } from '../config/database.js';
 import User from '../models/user.js';
+import { validateUserData, validUserId } from '../middlewares/validations.js';
 
 const router = express.Router();
-
-// Middleware for validating user data
-const validateUserData = (req, res, next) => {
-    const { name, phone } = req.body;
-    try {
-        User.validate({ name, phone });
-        next();
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
-};
 
 // GET USERS
 router.get('/', async (req, res) => {
@@ -49,7 +39,7 @@ router.get('/', async (req, res) => {
 });
 
 // GET USER BY ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', validUserId, async (req, res) => {
     const db = getDatabase();
     const { id } = req.params;
 
@@ -80,7 +70,7 @@ router.post('/', validateUserData, async (req, res) => {
 });
 
 // UPDATE USER
-router.put('/:id', validateUserData, async (req, res) => {
+router.put('/:id', validUserId, validateUserData, async (req, res) => {
     const db = getDatabase();
     const { id } = req.params;
     const { name, phone } = req.body;
@@ -97,7 +87,7 @@ router.put('/:id', validateUserData, async (req, res) => {
 });
 
 // DELETE USER
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', validUserId, async (req, res) => {
     const db = getDatabase();
     const { id } = req.params;
 
@@ -111,5 +101,10 @@ router.delete('/:id', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+// GET USER'S TODOS
+router.get('/:id/todos', validUserId, async function (req, res) {
+    res.render('listTodos', { userId: req.params.id });
+})
 
 export default router;

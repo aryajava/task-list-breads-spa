@@ -131,20 +131,21 @@
         if (formMode === 'add') {
           userModalLabel.textContent = 'Add User';
           formModalContent.style.display = 'block';
+          deleteContent.style.display = 'none';
           nameFormModal.value = '';
           phoneFormModal.value = '';
-          deleteContent.style.display = 'none';
           saveButton.textContent = 'Save';
         } else if (formMode === 'edit') {
           userModalLabel.textContent = 'Edit User';
+          formModalContent.style.display = 'block';
           deleteContent.style.display = 'none';
           nameFormModal.value = name;
           phoneFormModal.value = phone;
           saveButton.textContent = 'Save changes';
         } else if (formMode === 'delete') {
           userModalLabel.textContent = 'Delete User';
-          deleteContent.style.display = 'block';
           formModalContent.style.display = 'none';
+          deleteContent.style.display = 'block';
           deleteItemName.textContent = name;
           saveButton.textContent = 'Delete';
         }

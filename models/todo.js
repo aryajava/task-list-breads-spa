@@ -3,10 +3,10 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export default class Todo {
-    constructor(title, complete = false, deadline = new Date(), executor) {
+    constructor(title, complete, deadline, executor) {
         this.title = title;
-        this.complete = complete;
-        this.deadline = deadline;
+        this.complete = complete || false;
+        this.deadline = deadline || new Date();
         this.executor = new ObjectId(executor);
     }
 

@@ -28,6 +28,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/users", usersRouter);
+app.use("/todos", todosRouter);
 
 app.use((req, res, next) => {
     next(createError(404));
