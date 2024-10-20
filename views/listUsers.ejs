@@ -154,10 +154,8 @@
 
       const fetchUsers = async () => {
         let fetchUrl = `/users?page=${currentPage}&limit=${limit}&search=${search}&sortBy=${sortBy}&sortMode=${sortMode}`;
-        console.log(fetchUrl);
         const response = await fetch(fetchUrl);
         const data = await response.json();
-        console.log(data);
 
         if (data.data && Array.isArray(data.data)) {
           users = data.data;

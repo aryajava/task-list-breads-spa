@@ -17,8 +17,6 @@ router.get('/', async (req, res) => {
   if (enddateDeadline) query.deadline = { ...query.deadline, $lte: new Date(enddateDeadline) };
   if (executor) query.executor = new ObjectId(executor);
 
-  console.log(query);
-
   const sort = { [sortBy]: sortMode === 'desc' ? -1 : 1 };
   const offset = (page - 1) * limit;
 
@@ -77,7 +75,6 @@ router.put('/:id', validateTodoId, validateTodoData, async (req, res) => {
     complete,
     deadline: new Date(deadline),
   };
-  console.log(todoData);
   try {
     const result = await Todo.update(db, id, todoData);
     if (result.matchedCount === 0) {
