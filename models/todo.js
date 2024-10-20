@@ -6,7 +6,7 @@ export default class Todo {
     constructor(title, complete, deadline, executor) {
         this.title = title;
         this.complete = complete || false;
-        this.deadline = deadline || new Date();
+        this.deadline = deadline || new Date(Date.now() + 24 * 60 * 60 * 1000);
         this.executor = new ObjectId(executor);
     }
 
