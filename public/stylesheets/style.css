@@ -19,14 +19,14 @@
   transform: translateY(-50%);
 }
 
-th a {
+th#sortName {
   display: flex;
   align-items: center;
   justify-content: start;
 }
 
-th i {
-  margin-left: 5px;
+.table>:not(caption)>*>* {
+  border-bottom-width: 0;
 }
 
 th {
