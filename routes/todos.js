@@ -17,6 +17,8 @@ router.get('/', async (req, res) => {
   if (enddateDeadline) query.deadline = { ...query.deadline, $lte: new Date(enddateDeadline) };
   if (executor) query.executor = new ObjectId(executor);
 
+  console.log(query);
+
   const sort = { [sortBy]: sortMode === 'desc' ? -1 : 1 };
   const offset = (page - 1) * limit;
 
@@ -39,6 +41,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', validateTodoId, async (req, res) => {
   const db = getDatabase();
   const { id } = req.params;
+
   try {
     const todo = await Todo.getById(db, id);
     if (!todo) {
@@ -53,11 +56,12 @@ router.get('/:id', validateTodoId, async (req, res) => {
 // CREATE TODO
 router.post('/', validateTodoData, async (req, res) => {
   const db = getDatabase();
-  const { title, complete, deadline, executor } = req.body;
-  const todoData = { title, complete, deadline, executor };
+  const { title, executor } = req.body;
+  const todoData = { title, executor: new ObjectId(executor) };
   try {
     const result = await Todo.save(db, todoData);
-    res.status(201).json(result.ops[0]);
+    const todo = await Todo.getById(db, result.insertedId);
+    res.status(201).json(todo);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -68,13 +72,19 @@ router.put('/:id', validateTodoId, validateTodoData, async (req, res) => {
   const db = getDatabase();
   const { id } = req.params;
   const { title, complete, deadline } = req.body;
-  const todoData = { title, complete, deadline };
+  const todoData = {
+    title,
+    complete,
+    deadline: new Date(deadline),
+  };
+  console.log(todoData);
   try {
     const result = await Todo.update(db, id, todoData);
     if (result.matchedCount === 0) {
       return res.status(404).json({ error: 'Todo not found' });
     }
-    res.status(200).json(result);
+    const updatedTodo = await Todo.getById(db, id);
+    res.status(200).json(updatedTodo);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -85,11 +95,12 @@ router.delete('/:id', validateTodoId, async (req, res) => {
   const db = getDatabase();
   const { id } = req.params;
   try {
+    const todo = await Todo.getById(db, id);
     const result = await Todo.delete(db, id);
     if (result.deletedCount === 0) {
       return res.status(404).json({ error: 'Todo not found' });
     }
-    res.status(200).json(result);
+    res.status(200).json(todo);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

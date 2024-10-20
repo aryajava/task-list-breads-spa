@@ -42,9 +42,15 @@ export const validateTodoId = async (req, res, next) => {
 }
 
 export const validateTodoData = async (req, res, next) => {
-  const { title, complete, deadline, executor } = req.body;
+  const { id } = req.params;
+  const { title, executor, complete, deadline } = req.body;
   try {
-    await Todo.validate({ title, complete, deadline, executor });
+    if (!complete && !deadline) {
+      await Todo.validate({ title, executor });
+    } else {
+      await Todo.validate({ title, complete, deadline: new Date(deadline), executor: id });
+    }
+
     next();
   } catch (err) {
     res.status(400).json({ error: err.message });

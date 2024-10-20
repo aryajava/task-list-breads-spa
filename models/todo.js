@@ -14,10 +14,10 @@ export default class Todo {
         if (!todoData.title || typeof todoData.title !== "string") {
             throw new Error("Title is required and must be a string.");
         }
-        if (typeof todoData.complete !== "boolean") {
+        if (todoData.complete !== undefined && typeof todoData.complete !== "boolean") {
             throw new Error("Complete must be a boolean.");
         }
-        if (!todoData.deadline || !(todoData.deadline instanceof Date)) {
+        if (todoData.deadline !== undefined && !(todoData.deadline instanceof Date)) {
             throw new Error("Deadline must be a valid Date.");
         }
         if (!todoData.executor || !ObjectId.isValid(todoData.executor)) {
@@ -40,29 +40,33 @@ export default class Todo {
         return await todosCollection.countDocuments(query);
     }
 
-    static async getById(db, userId, todoId) {
+    static async getById(db, todoId) {
         const todosCollection = db.collection(process.env.TODOS_COLLECTION);
-        const todo = await todosCollection.findOne({ _id: new ObjectId(todoId), executor: new ObjectId(userId) });
+        const todo = await todosCollection.findOne({ _id: new ObjectId(todoId) });
         return todo;
     }
 
     static async save(db, todoData) {
-        this.validate(todoData);
+        const { title, complete, deadline, executor } = todoData;
+        const todo = new Todo(title, complete, deadline, executor);
+        this.validate(todo);
         const todosCollection = db.collection(process.env.TODOS_COLLECTION);
-        const result = await todosCollection.insertOne(todoData);
+        const result = await todosCollection.insertOne(todo);
         return result;
     }
 
-    static async update(db, userId, todoId, todoData) {
-        this.validate(todoData);
+    static async update(db, todoId, todoData) {
+        const { title, complete, deadline, executor } = todoData;
+        const todo = new Todo(title, complete, deadline, executor);
+        this.validate(todo);
         const todosCollection = db.collection(process.env.TODOS_COLLECTION);
-        const result = await todosCollection.updateOne({ _id: new ObjectId(todoId), executor: new ObjectId(userId) }, { $set: todoData });
+        const result = await todosCollection.updateOne({ _id: new ObjectId(todoId) }, { $set: todoData });
         return result;
     }
 
-    static async delete(db, userId, todoId) {
+    static async delete(db, todoId) {
         const todosCollection = db.collection(process.env.TODOS_COLLECTION);
-        const result = await todosCollection.deleteOne({ _id: new ObjectId(todoId), executor: new ObjectId(userId) });
+        const result = await todosCollection.deleteOne({ _id: new ObjectId(todoId) });
         return result;
     }
 }
