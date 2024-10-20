@@ -62,7 +62,7 @@ router.post('/', validateUserData, async (req, res) => {
     try {
         const newUser = new User(name, phone);
         const result = await User.save(db, newUser);
-        res.status(201).json({ _id: result.insertedId, name, phone });
+        res.status(201).json({ _id: result.insertedId, ...newUser });
     } catch (err) {
         console.error('Error creating user', err);
         res.status(500).json({ error: err.message });
@@ -90,13 +90,13 @@ router.put('/:id', validUserId, validateUserData, async (req, res) => {
 router.delete('/:id', validUserId, async (req, res) => {
     const db = getDatabase();
     const { id } = req.params;
-
     try {
+        const user = await User.getById(db, id);
         const result = await User.delete(db, id);
         if (result.deletedCount === 0) {
             return res.status(404).json({ error: 'User not found' });
         }
-        res.status(200).json({ _id: id });
+        res.status(200).json(user);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
