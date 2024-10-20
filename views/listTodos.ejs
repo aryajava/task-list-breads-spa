@@ -1,30 +1,376 @@
 <%- include('partials/header') %>
-  <div class="container">
-    <h1>Todos List</h1>
-    <div id="todos-list"></div>
-  </div>
-  <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      const userId = '<%= userId %>';
-      try {
-        const response = await fetch(`http://localhost:3000/todos?executor=${userId}`);
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        const todosList = document.getElementById('todos-list');
-        todosList.innerHTML = data.data.map(todo => `
-        <div class="user">
-          <p><strong>ID:</strong> ${todo._id}</p>
-          <p><strong>Title:</strong> ${todo.title}</p>
-          <p><strong>Deadline:</strong> ${todo.deadline}</p>
-          <p><strong>Complete:</strong> ${todo.complete}</p>
-          <p><strong>Executor:</strong> ${todo.executor}</p>
+  <div class="row mt-3">
+    <div class="col">
+      <div class="card">
+        <div class="card-header d-flex align-items-center">
+          <a class="btn btn-secondary position-absolute" href="/" role="button"><i
+              class="fa-solid fa-chevron-left"></i></a>
+          <h3 class="mb-0 card-title my-1 flex-grow-1 text-center">Todo List</h3>
         </div>
-      `).join('');
-      } catch (error) {
-        console.error('There was a problem with the fetch operation:', error);
-      }
-    });
-  </script>
-  <%- include('partials/footer') %>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-12 col-md-4 col-lg-3 align-self-center">
+              <label for="searchTitle">Title</label>
+            </div>
+            <div class="col-12 col-md-8 col-lg-9 align-self-center">
+              <input type="text" class="form-control" id="searchTitle" placeholder="Insert your title">
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-12 col-md-4 col-lg-3 align-self-center">
+              <label for="searchStartdate">Deadline</label>
+            </div>
+            <div class="col-12 col-md-3 col-lg-4 align-self-center">
+              <input type="datetime-local" class="form-control" id="searchStartdate">
+            </div>
+            <div class="col-12 col-md-2 col-lg-1 align-self-center text-center">
+              <label for="searchEnddate">s.d.</label>
+            </div>
+            <div class="col-12 col-md-3 col-lg-4 align-self-center">
+              <input type="datetime-local" class="form-control" id="searchEnddate">
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-12 col-md-4 col-lg-3 align-self-center">
+              <label for="searchComplete">Complete</label>
+            </div>
+            <div class="col-12 col-md-8 col-lg-9 align-self-center">
+              <select class="form-select" id="searchComplete">
+                <option selected disabled class="d-none">&minus; Select Complete &minus;</option>
+                <option value="false">Not Yet</option>
+                <option value="true">Done</option>
+              </select>
+            </div>
+          </div>
+          <div class="row mt-3">
+            <div class="col-12 col-md-4 col-lg-3 mb-2 mb-md-0">
+              <button type="button" id="sortButton" class="btn btn-success w-auto"><i
+                  class="fa-solid fa-sort me-2"></i>Sort by deadline</button>
+            </div>
+            <div class="col-12 col-md-8 col-lg-9 d-flex justify-content-start">
+              <button type="button" id="resetButton" class="btn btn-warning me-2 w-auto"><i
+                  class="fa-solid fa-rotate"></i></button>
+              <button type="button" id="searchButton" class="btn btn-info w-auto"><i
+                  class="fa-solid fa-magnifying-glass"></i></button>
+            </div>
+          </div>
+        </div>
+        <hr class="m-0">
+        <div class="bg-light">
+          <div class="mx-3">
+            <div class="input-group my-2">
+              <input type="text" class="form-control" id="newTitle" placeholder="Add todo">
+              <button type="button" id="addTodoButton" class="btn btn-primary"><i
+                  class="fa-solid fa-circle-down"></i></button>
+            </div>
+          </div>
+        </div>
+        <div class="row m-0">
+          <ul class="list-group p-0" id="todoList">
+            <!-- todo list -->
+          </ul>
+        </div>
+      </div>
+
+      <!-- Todo Modal -->
+      <div class="modal fade" id="todoModal" tabindex="-1" aria-labelledby="todoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-top modal-dialog-scrollable">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="todoModalLabel">Form</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" id="todoId">
+              <div id="editFields">
+                <div class="row mb-3">
+                  <div class="col-12 col-md-4 col-lg-3 align-self-center">
+                    <label for="todoTitle">Title</label>
+                  </div>
+                  <div class="col-12 col-md-8 col-lg-9 align-self-center">
+                    <input type="text" class="form-control" id="todoTitle">
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-12 col-md-4 col-lg-3 align-self-center">
+                    <label for="todoDeadline">Deadline</label>
+                  </div>
+                  <div class="col-12 col-md-8 col-lg-9 align-self-center">
+                    <input type="datetime-local" class="form-control" id="todoDeadline">
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-12 col-md-4 col-lg-3 align-self-center">
+                    <label for="todoComplete" class="form-check-label">Complete</label>
+                  </div>
+                  <div class="col-12 col-md-8 col-lg-9 align-self-center">
+                    <input type="checkbox" class="form-check-input" id="todoComplete">
+                    <label for="todoComplete" class="form-check-label">Done</label>
+                  </div>
+                </div>
+              </div>
+              <div id="deleteMessage" class="d-none">
+                <p>Are you sure you want to delete '<span id="deleteTodoTitle"></span>'?</p>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <button type="button" class="btn btn-primary" id="modalSubmitButton">Save changes</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        $(document).ready(function () {
+          let params = {
+            page: 1,
+            limit: 10,
+            title: '',
+            complete: '',
+            startdateDeadline: '',
+            enddateDeadline: '',
+            sortBy: '_id',
+            sortMode: 'desc',
+            executor: '<%= userId %>',
+          };
+
+          let isLoading = false;
+          let hasMoreData = true;
+
+          const todoList = $('#todoList');
+          const searchTitle = $('#searchTitle');
+          const searchStartdate = $('#searchStartdate');
+          const searchEnddate = $('#searchEnddate');
+          const searchComplete = $('#searchComplete');
+          const sortButton = $('#sortButton');
+          const resetButton = $('#resetButton');
+          const searchButton = $('#searchButton');
+          const newTitle = $('#newTitle');
+          const addTodoButton = $('#addTodoButton');
+          const todoModal = new bootstrap.Modal($('#todoModal')[0], { backdrop: 'static', keyboard: false });
+          const todoTitle = $('#todoTitle');
+          const todoDeadline = $('#todoDeadline');
+          const todoComplete = $('#todoComplete');
+          const modalSubmitButton = $('#modalSubmitButton');
+          const deleteMessage = $('#deleteMessage');
+          const deleteTodoTitle = $('#deleteTodoTitle');
+
+          const fetchTodos = () => {
+            let fetchUrl = `/todos?executor=${params.executor}&page=${params.page}&limit=${params.limit}&sortBy=${params.sortBy}&sortMode=${params.sortMode}`;
+            if (params.title) fetchUrl += `&title=${params.title}`;
+            if (params.complete) fetchUrl += `&complete=${params.complete}`;
+            if (params.startdateDeadline) fetchUrl += `&startdateDeadline=${params.startdateDeadline}`;
+            if (params.enddateDeadline) fetchUrl += `&enddateDeadline=${params.enddateDeadline}`;
+
+            return $.ajax({
+              url: fetchUrl,
+              method: 'GET',
+              dataType: 'json'
+            });
+          };
+
+          const renderTodos = (isAppend = false) => {
+            if (!isAppend) todoList.empty();
+            const placeholder = `
+              <li class="list-group-item border-0 rounded d-flex flex-md-row my-2 justify-content-between align-items-start align-items-md-center position-relative  placeholder-glow">
+                <span class="placeholder col-8"></span>
+                <span class="placeholder col-3"></span>
+              </li>
+            `;
+            todoList.append(placeholder);
+
+            fetchTodos().done(function (todos) {
+              if (todos.data.length === 0) {
+                hasMoreData = false; // Tidak ada data lagi yang bisa dimuat
+                todoList.find('.placeholder-glow').remove(); // Hapus placeholder
+                return;
+              }
+              setTimeout(() => {
+                todoList.find('.placeholder-glow').remove();
+
+                todos.data.forEach(todo => {
+                  const now = new Date();
+                  const date = new Date(todo.deadline);
+                  const day = String(date.getDate()).padStart(2, "0");
+                  const month = String(date.getMonth() + 1).padStart(2, "0");
+                  const year = date.getFullYear();
+                  const hours = String(date.getHours()).padStart(2, "0");
+                  const minutes = String(date.getMinutes()).padStart(2, "0");
+                  const formattedDate = `${day}-${month}-${year} ${hours}:${minutes}`;
+                  const formattedDateYear = `${year}-${month}-${day} ${hours}:${minutes}`;
+                  const passedDeadline = date < now && !todo.complete;
+
+                  if (todoList.find(`li[data-id="${todo._id}"]`).length === 0) {
+                    const todoItem = `
+                    <li class="list-group-item border-0 rounded d-flex flex-md-row my-2 justify-content-between align-items-start align-items-md-center position-relative ${todo.complete ? "bg-success-subtle text-success-emphasis" : passedDeadline ? "bg-danger-subtle text-danger-emphasis" : "bg-secondary-subtle text-secondary-emphasis"
+                      }" data-id="${todo._id}">
+                      <p class="fs-6 h-center fw-medium text-start d-flex align-items-center m-0 mb-md-0">${formattedDate} ${todo.title}</p>
+                      <div class="d-flex h-center">
+                    <button class="btn btn-sm me-2 ${todo.complete ? "text-success-emphasis" : passedDeadline ? "text-danger-emphasis" : "text-secondary-emphasis"
+                      }" data-bs-toggle="modal" data-bs-target="#todoModal" data-id="${todo._id}" data-title="${todo.title}" data-deadline="${formattedDateYear}" data-complete="${todo.complete
+                      }" data-action="edit"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn btn-sm ${todo.complete ? "text-success-emphasis" : passedDeadline ? "text-danger-emphasis" : "text-secondary-emphasis"
+                      }" data-bs-toggle="modal" data-bs-target="#todoModal" data-id="${todo._id}" data-title="${todo.title}" data-action="delete"><i class="fa-solid fa-trash"></i></button>
+                      </div>
+                    </li>
+                    `;
+                    todoList.append(todoItem);
+                  }
+                });
+                isLoading = false;
+              }, 500);
+            }).fail(function () {
+              isLoading = false;
+              todoList.find('.placeholder-glow').remove();
+            });
+          };
+
+          const addTodo = (title, executor) => {
+            $.ajax({
+              url: '/todos',
+              method: 'POST',
+              contentType: 'application/json',
+              data: JSON.stringify({ title, executor }),
+              success: function () {
+                renderTodos();
+              },
+              error: function () {
+                console.error('Failed to add todo');
+              }
+            });
+          };
+
+          addTodoButton.on('click', () => {
+            const title = newTitle.val().trim();
+            const executor = params.executor;
+            if (title) {
+              addTodo(title, executor);
+              newTitle.val('');
+            }
+          });
+
+          searchButton.on('click', () => {
+            params.title = searchTitle.val() || '';
+            params.startdateDeadline = searchStartdate.val() || '';
+            params.enddateDeadline = searchEnddate.val() || '';
+            params.complete = searchComplete.val() || '';
+            params.page = 1;
+            hasMoreData = true;
+
+            if (!params.title) delete params.title;
+            if (!params.startdateDeadline) delete params.startdateDeadline;
+            if (!params.enddateDeadline) delete params.enddateDeadline;
+            if (!params.complete || params.complete === '− Select Complete −') delete params.complete;
+            renderTodos();
+          });
+
+          resetButton.on('click', () => {
+            searchTitle.val('');
+            searchStartdate.val('');
+            searchEnddate.val('');
+            searchComplete.prop('selectedIndex', 0);
+            params.title = '';
+            params.startdateDeadline = '';
+            params.enddateDeadline = '';
+            params.complete = '';
+            params.page = 1;
+            hasMoreData = true;
+            if (params.sortBy !== '_id') {
+              params.sortBy = '_id';
+              params.sortMode = 'desc';
+              sortButton.html(`<i class="fa-solid fa-sort me-2"></i>Sort by deadline`);
+            }
+            renderTodos();
+          });
+
+          sortButton.on('click', () => {
+            params.sortBy = 'deadline';
+            params.sortMode = params.sortMode === 'asc' ? 'desc' : 'asc';
+            params.page = 1;
+            hasMoreData = true;
+            if (params.sortMode === 'asc') {
+              sortButton.html(`<i class="fa-solid fa-sort-asc me-2"></i>Sort by deadline`);
+            } else {
+              sortButton.html(`<i class="fa-solid fa-sort-desc me-2"></i>Sort by deadline`);
+            }
+
+            renderTodos();
+          });
+
+          $('#todoModal').on('show.bs.modal', (event) => {
+            const button = $(event.relatedTarget);
+            const action = button.data('action');
+            const id = button.data('id');
+            const title = button.data('title');
+            const deadline = button.data('deadline');
+            const complete = button.data('complete');
+
+            if (action === 'edit') {
+              $('#editFields').removeClass('d-none');
+              $('#deleteMessage').addClass('d-none');
+              $('#todoId').val(id);
+              $('#todoTitle').val(title);
+              $('#todoDeadline').val(deadline);
+              $('#todoComplete').prop('checked', complete === true);
+              modalSubmitButton.data('action', 'edit');
+            } else if (action === 'delete') {
+              $('#editFields').addClass('d-none');
+              $('#deleteMessage').removeClass('d-none');
+              $('#todoId').val(id);
+              $('#deleteTodoTitle').text(title);
+              modalSubmitButton.data('action', 'delete');
+            }
+          });
+
+          modalSubmitButton.on('click', () => {
+            const id = $('#todoId').val();
+            const action = modalSubmitButton.data('action');
+
+            if (action === 'edit') {
+              const title = $('#todoTitle').val();
+              const deadline = $('#todoDeadline').val();
+              const complete = $('#todoComplete').prop('checked');
+
+              $.ajax({
+                url: `/todos/${id}`,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({ title, deadline, complete }),
+                success: function () {
+                  renderTodos();
+                  todoModal.hide();
+                },
+                error: function () {
+                  console.error('Failed to edit todo');
+                }
+              });
+            } else if (action === 'delete') {
+              $.ajax({
+                url: `/todos/${id}`,
+                method: 'DELETE',
+                success: function () {
+                  renderTodos();
+                  todoModal.hide();
+                },
+                error: function () {
+                  console.error('Failed to delete todo');
+                }
+              });
+            }
+          });
+
+          $(window).on('scroll', () => {
+            if ($(window).scrollTop() + $(window).height() >= $(document).height() - 100) {
+              if (!isLoading && hasMoreData) {
+                isLoading = true;
+                params.page += 1;
+                renderTodos(true);
+              }
+            }
+          });
+
+          renderTodos();
+        });
+      </script>
+      <%- include('partials/footer') %>
