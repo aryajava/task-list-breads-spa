@@ -49,4 +49,4 @@ This project is [Unlicense License](./LICENSE).
 
 ## Contact
 
-If you have any questions or issues, please open an [issue](https://github.com/aryajava/rc40-challenge21/issues) at the issue tracker
+If you have any questions or issues, please open an [issue](https://github.com/aryajava/rc40-challenge22-spa/issues) at the issue tracker
