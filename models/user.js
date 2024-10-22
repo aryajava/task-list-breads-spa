@@ -8,16 +8,6 @@ export default class User {
         this.phone = phone;
     }
 
-    static validate(userData) {
-        if (!userData.name || typeof userData.name !== "string") {
-            throw new Error("Name is required and must be a string.");
-        }
-        if (!userData.phone || typeof userData.phone !== "string") {
-            throw new Error("Phone is required and must be a string.");
-        }
-        return true;
-    }
-
     static async getAll(db, query = {}, sort = {}, offset = 0, limit = 0) {
         const usersCollection = db.collection(process.env.USERS_COLLECTION);
         if (limit === 0) {
@@ -39,14 +29,12 @@ export default class User {
     }
 
     static async save(db, userData) {
-        this.validate(userData);
         const usersCollection = db.collection(process.env.USERS_COLLECTION);
         const result = await usersCollection.insertOne(userData);
         return result;
     }
 
     static async update(db, userId, userData) {
-        this.validate(userData);
         const usersCollection = db.collection(process.env.USERS_COLLECTION);
         const result = await usersCollection.updateOne({ _id: new ObjectId(userId) }, { $set: userData });
         return result;

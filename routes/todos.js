@@ -2,19 +2,32 @@ import express from 'express';
 import { getDatabase } from '../config/database.js';
 import Todo from '../models/todo.js';
 import { ObjectId } from 'mongodb';
-import { validateTodoId, validateTodoData } from '../middlewares/validations.js';
+import { validateTodoId, validateTodoAdd, validateTodoUpdate } from '../middlewares/validations.js';
 
 const router = express.Router();
 
 // GET TODOS
 router.get('/', async (req, res) => {
   const db = getDatabase();
-  const { page = 1, limit = 10, title, complete, startdateDeadline, enddateDeadline, sortBy = '_id', sortMode = 'desc', executor } = req.query;
+  const { page = 1, limit = 10, title, complete, startdateDeadline, enddateDeadline, sortBy = 'deadline', sortMode = 'asc', executor } = req.query;
   const query = {};
   if (title) query.title = { $regex: title, $options: 'i' };
   if (complete !== undefined) query.complete = complete === 'true';
-  if (startdateDeadline) query.deadline = { $gte: new Date(startdateDeadline) };
-  if (enddateDeadline) query.deadline = { ...query.deadline, $lte: new Date(enddateDeadline) };
+  if (startdateDeadline || enddateDeadline) {
+    query.deadline = {};
+    if (startdateDeadline && enddateDeadline) {
+      // convert object date to iso string
+      // covert iso string to object date
+      query.deadline = { $gte: new Date(startdateDeadline).toISOString(), $lte: new Date(enddateDeadline).toISOString() };
+      query.deadline = { $gte: new Date(startdateDeadline), $lte: new Date(enddateDeadline) };
+    } else if (startdateDeadline) {
+      query.deadline = { $gte: new Date(startdateDeadline).toISOString() };
+      query.deadline = { $gte: new Date(startdateDeadline) };
+    } else if (enddateDeadline) {
+      query.deadline = { $lte: new Date(enddateDeadline).toISOString() };
+      query.deadline = { $lte: new Date(enddateDeadline) };
+    }
+  }
   if (executor) query.executor = new ObjectId(executor);
 
   const sort = { [sortBy]: sortMode === 'desc' ? -1 : 1 };
@@ -52,7 +65,7 @@ router.get('/:id', validateTodoId, async (req, res) => {
 });
 
 // CREATE TODO
-router.post('/', validateTodoData, async (req, res) => {
+router.post('/', validateTodoAdd, async (req, res) => {
   const db = getDatabase();
   const { title, executor } = req.body;
   const todoData = { title, executor: new ObjectId(executor) };
@@ -66,14 +79,14 @@ router.post('/', validateTodoData, async (req, res) => {
 });
 
 // UPDATE TODO
-router.put('/:id', validateTodoId, validateTodoData, async (req, res) => {
+router.put('/:id', validateTodoId, validateTodoUpdate, async (req, res) => {
   const db = getDatabase();
   const { id } = req.params;
   const { title, complete, deadline } = req.body;
   const todoData = {
     title,
     complete,
-    deadline: new Date(deadline),
+    deadline,
   };
   try {
     const result = await Todo.update(db, id, todoData);
