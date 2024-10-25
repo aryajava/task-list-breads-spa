@@ -357,7 +357,7 @@
             }
           });
 
-          $(window).on('scroll', () => {
+          $(window).on('wheel touchmove', () => {
             if ($(window).scrollTop() + $(window).height() >= $(document).height() - 100) {
               if (!isLoading && hasMoreData) {
                 isLoading = true;
