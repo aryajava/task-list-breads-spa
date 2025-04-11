@@ -1,12 +1,12 @@
-# Rubicamp Batch 40
+# Task List
 
-> Challenge 22 Single Page Application (SPA)
+> Task List - Single Page Application (SPA)
 
 This project is a Single Page Application (SPA) that utilizes a RESTful API to perform BREADS (Browse, Read, Edit, Add, Delete, Sort) operations. The backend is built using Express JS and EJS for templating, while MongoDB is used as the database. The frontend is developed using Vanilla JavaScript and jQuery, with Bootstrap 5 and FontAwesome for styling and icons.
 
 ## Table of Contents
 
-- [Rubicamp Batch 40](#rubicamp-batch-40)
+- [Task List](#task-list)
   - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
   - [Usage](#usage)
